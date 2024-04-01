@@ -1,0 +1,95 @@
+---
+title: "ANOVA"
+geometry: margin = 2.5cm
+header-includes:
+- \usepackage[T1]{fontenc}
+- \usepackage{lmodern}
+- \usepackage{fancyhdr}
+- \pagestyle{fancy}
+- \fancyhead{}
+- \lhead{Report 1}
+- \rhead{An, Li, Shi, Yu}
+- \headheight = 15pt
+output: 
+  pdf_document:
+    fig_caption: yes
+    number_sections: yes
+  html_document:
+    df_print: paged
+pagenumbering: yes
+fontsize: 12pt
+toc: no
+---
+
+
+```{r setup, include=FALSE}
+rm(list = ls(all.names = TRUE))
+library(knitr)
+
+#library(plotly)
+options(tinytex.verbose = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+\section{Introduction}
+
+sdfsdfsdfsdfs
+
+
+
+\section{Exploratory Data Analysis}
+
+```{r load data, include=FALSE}
+potato<-read.table("./potato.dat.txt",col.names = c("area","temp","size","storage","cook", "texture", "flavour", "moist"))
+# leave out texture and moist
+summary(potato) # it is a balanced set
+```
+
+```{r EDA_plot}
+layout(mat = matrix(c(1,1,2,2,3,3,
+                      0,4,4,5,5,0), nrow = 2, byrow = TRUE))
+boxplot(potato$flavour~potato$area, data = potato, xlab = "Growing Area", ylab = "Flavor score")
+boxplot(potato$flavour~potato$temp, data = potato, xlab = "Temperature", ylab = "Flavor score")
+boxplot(potato$flavour~ potato$size, data = potato, xlab = "Size of Potato", ylab = "Flavor score")
+boxplot(potato$flavour~ potato$storage, data = potato, xlab = "Storage method", ylab = "Flavor score")
+boxplot(potato$flavour~ potato$cook, data = potato, xlab = "Cooking method", ylab = "Flavor score")
+# boxplot show similar variability----satisfy the assumption of homoscedasticity
+# boxplot, each box can be considered as symmetric ---- satisfy the assumption of normality
+# 160 groups of samples are independent ---- satisfy the assumption of independence
+
+```
+
+asdadsad
+
+
+
+\section{Model Fitting}
+
+```{r ANOVA, include=FALSE}
+potato$area<-as.factor(potato$area)
+potato$temp<-as.factor(potato$temp)
+potato$size<-as.factor(potato$size)
+potato$storage<-as.factor(potato$storage)
+potato$cook<-as.factor(potato$cook)
+# NULL : assume error has zero mean
+potato.aov = aov(flavour~size:storage + area + temp+ temp:storage + cook:storage+ cook + area:storage, data=potato)
+summary(potato.aov)
+coef(potato.aov)
+# difference not significance
+# accept the NULL assumption
+```
+
+
+
+
+\section{Model Assessment}
+
+```{r ANOVA_assessment}
+layout(matrix(1:4,ncol=2))
+plot(potato.aov)
+```
+
+
+
+\section{Conclusions}

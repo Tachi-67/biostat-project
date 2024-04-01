@@ -1,0 +1,102 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+by order: Growing Area 8 /\* 1=Southern OR, 2=Central OR */ Two week holding temp 16 /* 1=75F 2=40F */ Size of Potato 24 /* 1=Large, 2=Medium */ Storage Period 32 /* 1=0 months, 2=2 mths 3=4mths, 4=6mths */ Cooking method 40 /* 1=Boil, 2=Steam, 3=Mash, [4=Bake\@350](mailto:4=Bake@350){.email}, [5=Bake\@450](mailto:5=Bake@450){.email} \*/ Texture score 46-48 Flavor score 54-56 Moistness score 62-64
+
+```{r}
+# V1 = Growing Area
+# V2 = Two week holding temp
+# V3 = Size of Potato
+# V4 = Storage Period
+# V5 = Cooking method
+# V6 = Texture score (don't care)
+# V7 = Flavor score
+# V8 = Moistness score (don't care)
+
+url <- "https://users.stat.ufl.edu/~winner/data/potato.dat"
+data <- read.table(url, header = FALSE, sep = "")
+head(data, 10)
+```
+
+```{r}
+data_mean<-tapply(data$V7, list(data$V1, data$V2, data$V3, data$V4, data$V5), mean)
+data_std<-tapply(data$V7, list(data$V1, data$V2, data$V3, data$V4, data$V5), sd)
+summary(data)
+```
+
+```{r}
+layout(matrix(1:6, nrow = 2))
+boxplot(V7 ~ V1, data = data)
+boxplot(V7 ~ V2, data = data)
+boxplot(V7 ~ V3, data = data)
+boxplot(V7 ~ V4, data = data)
+boxplot(V7 ~ V5, data = data)
+```
+
+```{r, fig.width=9, fig.height=6}
+layout(matrix(1:12, nrow = 3))
+interaction.plot(x.factor = data$V1, trace.factor = data$V2, response = data$V7)
+interaction.plot(x.factor = data$V1, trace.factor = data$V3, response = data$V7)
+interaction.plot(x.factor = data$V1, trace.factor = data$V4, response = data$V7)
+interaction.plot(x.factor = data$V1, trace.factor = data$V5, response = data$V7)
+interaction.plot(x.factor = data$V2, trace.factor = data$V3, response = data$V7)
+interaction.plot(x.factor = data$V2, trace.factor = data$V4, response = data$V7)
+interaction.plot(x.factor = data$V2, trace.factor = data$V5, response = data$V7)
+interaction.plot(x.factor = data$V3, trace.factor = data$V4, response = data$V7)
+interaction.plot(x.factor = data$V3, trace.factor = data$V5, response = data$V7)
+interaction.plot(x.factor = data$V4, trace.factor = data$V5, response = data$V7)
+```
+
+```{r}
+data[,c("V1","V2","V3","V4","V5")] <- lapply(data[,c("V1","V2","V3","V4","V5")], factor)
+```
+
+从二阶开始，依次去掉P值最大的变量，直到所有都显著
+
+```{r}
+result <- aov(V7 ~ (V1+V2+V3+V4+V5)^2, data=data)
+summary(result)
+```
+
+```{r}
+result <- aov(V7 ~ (V1+V2+V3+V4+V5)^2-V3, data=data)
+summary(result)
+```
+
+最终模型：（且经验证无论加上哪一个交互项都不显著）
+
+```{r}
+result <- aov(V7 ~ V1+V2+V4+V5+V1:V4+V2:V4+V3:V4+V4:V5, data=data)
+summary(result)
+```
+
+模型评估：残差的QQ-plot
+
+```{r}
+residuals <- residuals(result)
+
+qqnorm(residuals)
+qqline(residuals, col = "red")  # 添加一条参考线
+```
+
+查看具体哪个factor level让某一项显著 V1(2\>1) V2(1\>2) V4(2=3=4\>1) V5(1=3=4\>5=2)
+
+？？交互项怎么解释 V1:V4() V2:V4(其他\>2:1) V3:V4(4:1=3:2\>其他) V4:V5()
+
+```{r, fig.width=6, fig.height=10}
+tukey_result <- TukeyHSD(result)
+print(tukey_result)
+plot(tukey_result)
+```
+
+```{r, fig.width=8, fig.height=6}
+layout(matrix(1:4, nrow = 2))
+interaction.plot(x.factor = data$V4, trace.factor = data$V1, response = data$V7)
+interaction.plot(x.factor = data$V4, trace.factor = data$V2, response = data$V7)
+interaction.plot(x.factor = data$V4, trace.factor = data$V3, response = data$V7)
+interaction.plot(x.factor = data$V4, trace.factor = data$V5, response = data$V7)
+```
